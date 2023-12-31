@@ -34,8 +34,8 @@ Then, execute the VBEM-M algorithm,
 
 Finally, get the estimation of slipping parameter $s_0$ and guessing parameter $g_0$,
 
-    lambda_est <-r$para_est$lambda ## slope parameter in LCDM form
-    eta_est <- r$para_est$eta      ## intercept parameter in LCDM form
+    lambda_est <-result$para_est$lambda ## slope parameter in LCDM form
+    eta_est <- result$para_est$eta      ## intercept parameter in LCDM form
     g_est <- 1/(1+exp(-(eta)))     ## convert to guessing parameter in DINA
     s_est <- 1-1/(1+exp(-(eta +lambda))) ## convert to slipping parameter in DINA
         
