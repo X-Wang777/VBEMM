@@ -7,6 +7,7 @@ Install the package
 ---------------
 
     install.packages("devtools")
+    library(devtools)
     install_github("X-Wang777/VBEMM")
     library(VBEMM)
 
