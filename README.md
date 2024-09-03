@@ -29,7 +29,7 @@ Then, we get the estimation of slipping parameter $s_0$ and guessing parameter $
 
 When based on LCDM, the slope parameter **$\lambda$** is a $J \times 2^K-1$ dimention matrix. 
 
-    r <- VBEMM(data=y,K=K,Q=Q0,lambdaindex =lambdaindex,model='LCDM',trunc_num=-Inf)
+    r <- VBEMM(data,K,Q,model='LCDM')
 
 #### 3. Example for constrained LCDM 
 
