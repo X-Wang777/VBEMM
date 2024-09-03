@@ -18,6 +18,10 @@ Examples
 
     result <- VBEMM(data,K,Q,model='DINA')#data is a n_student by n_item binary response matrix, K is the attribute number, Q is a n_item by K Q-matrix.
 
+#### 2. Example for DINA mode
+
+    result <- VBEMM(data,K,Q,model='DINO')
+
 Then, we get the estimation of slipping parameter $s_0$ and guessing parameter $g_0$,
 
     lambda_est <-result$para_est$lambda ## slope parameter in LCDM form
@@ -25,13 +29,13 @@ Then, we get the estimation of slipping parameter $s_0$ and guessing parameter $
     g_est <- 1/(1+exp(-(eta)))     ## convert to guessing parameter in DINA
     s_est <- 1-1/(1+exp(-(eta +lambda))) ## convert to slipping parameter in DINA
         
-#### 2. Example for saturated LCDM 
+#### 3. Example for saturated LCDM 
 
 When based on LCDM, the slope parameter **$\lambda$** is a $J \times 2^K-1$ dimention matrix. 
 
     r <- VBEMM(data,K,Q,model='LCDM')
 
-#### 3. Example for constrained LCDM 
+#### 4. Example for constrained LCDM 
 
 When estimate a constrained LCDM, such as LLM, we need a additional parameter 'lambdaindex' which is a 0-1 matrix to indicate the active (non-zero) elements in **$\lambda$**
 
