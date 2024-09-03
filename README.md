@@ -14,25 +14,11 @@ Install the package
 Examples
 ---------------
 
-#### 1. Example for DINA model
+#### 1. Example for DINA mode
 
-First, genetate a set of data,
+    result <- VBEMM(data,K,Q,model='DINA')#data is a n_student by n_item binary response matrix, K is the attribute number, Q is a n_item by K Q-matrix.
 
-    N <- 1000 ## number of students
-    J <- 30   ## length of test
-    K <- 5    ## number of attribute
-    sigma=0.3 ## correlation between attribute
-    Q0 <- Qgenerate(J,K,0.5) ## generate a Q-matrix
-    s0 <- rep(0.1,J) ## true values of slipping parameter
-    g0 <- rep(0.1,J) ## true values of guessing parameter
-    generate_data <- DINAdatagenerate(N,J,K,s0,g0,Q0,sigma)
-    y <- generate_data$y
-
-Then, execute the VBEM-M algorithm,
-
-    result <- VBEMM(data=y,K=K,Q=Q0,model='DINA')
-
-Finally, get the estimation of slipping parameter $s_0$ and guessing parameter $g_0$,
+Then, we get the estimation of slipping parameter $s_0$ and guessing parameter $g_0$,
 
     lambda_est <-result$para_est$lambda ## slope parameter in LCDM form
     eta_est <- result$para_est$eta      ## intercept parameter in LCDM form
@@ -41,17 +27,15 @@ Finally, get the estimation of slipping parameter $s_0$ and guessing parameter $
         
 #### 2. Example for saturated LCDM 
 
-When based on LCDM, the slope parameter **$\lambda$** is a $J \times 2^K-1$ dimention matrix. Additionally, we need a 0-1 matrix to indicate the active (non-zero) elements in 
- **$\lambda$**, which is denoted as 'lambdaindex' as follows,
+When based on LCDM, the slope parameter **$\lambda$** is a $J \times 2^K-1$ dimention matrix. 
 
-    lambdaindex <- matrix(1,J,2^K-1) 
-    lambdaindex <- Q_saturatedLCDM(Q0)*lambdaindex
-    generate_data <- LCDMdatagenerate(N,J,K,lambda0,eta0,Q0,sigma)
-    y <- generate_data$y
     r <- VBEMM(data=y,K=K,Q=Q0,lambdaindex =lambdaindex,model='LCDM',trunc_num=-Inf)
 
+#### 3. Example for constrained LCDM 
 
+When estimate a constrained LCDM, such as LLM, we need a additional parameter 'lambdaindex' which is a 0-1 matrix to indicate the active (non-zero) elements in **$\lambda$**
 
+    r <- VBEMM(data,K,Q,lambdaindex =lambdaindex,model='LCDM')
 
 
 
