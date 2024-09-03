@@ -1,6 +1,0 @@
-useDynLib(VBEMM, .registration=TRUE)
-importFrom(Rcpp, evalCpp)
-exportPattern("^[[:alpha:]]+")
-importFrom(MASS,mvrnorm)
-importFrom("stats", "dnorm", "pnorm", "runif")
-importFrom("utils", "combn")
