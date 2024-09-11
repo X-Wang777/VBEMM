@@ -242,7 +242,7 @@ void update(arma::mat y,arma::cube h,arma::mat& lambda,arma::cube& Vlambda,arma:
   rho=rho/yy0;
   //update delta
   for(int d=0;d<L;d++){
-    delta[d]=sum(rho.col(d))+delta0[d];
+    delta(d)=sum(rho.col(d))+delta0(d);
   }
   //update lambda,xi
   arma::mat lambdanew;
@@ -321,7 +321,7 @@ void update_lcdm(arma::mat y,arma::cube h,arma::mat& lambda,arma::cube& Vlambda,
   rho=rho/yy0;
   //update delta
   for(int d=0;d<L;d++){
-    delta[d]=sum(rho.col(d))+delta0[d];
+    delta(d)=sum(rho.col(d))+delta0(d);
   }
   //update lambda,xi
   arma::mat lambdanew;
