@@ -536,7 +536,7 @@ Rcpp::List VBEMM_DINA(arma::mat data,int K,arma::mat Q,double EMlambda0=2,double
   xi=ke_1dim(h,lambda,Vlambda);
   double PHt,df,e;
   arma::vec phi1;arma::vec phi2;double phi2_uni;
-  arma::vec elbo(T);elbo(0)=0;
+  arma::vec elbo(T);elbo(0)=0;int step;
   for(int t=1;t<T;t++){
     //1,update rho(pars for z_i)
     phi1 = digamma_vec(delta);
@@ -560,6 +560,7 @@ Rcpp::List VBEMM_DINA(arma::mat data,int K,arma::mat Q,double EMlambda0=2,double
     Vlambda0t(0)=VMeta0;Vlambda0t(1)=VMlambda0;
     elbo(t)=ELBO_1dim(ystar,Vlambda,xi,rho,Vlambda0,delta,delta0,lambda00,Vlambda00,lambda0t,Vlambda0t,PH0,PHt,df);
     e=abs(elbo(t)-elbo(t-1));
+    step=t;
     Rcout << "Iteration = "<< t ;
     Rcout <<";ELBO change = "<< e<<'\r';
     if(e<e0){
@@ -574,7 +575,9 @@ Rcpp::List VBEMM_DINA(arma::mat data,int K,arma::mat Q,double EMlambda0=2,double
                             Rcpp::Named("Est_pi",pi),
                             Rcpp::Named("delta",delta),
                             Rcpp::Named("rho",rho),
-                            Rcpp::Named("Vlambda",Vlambda)
+                            Rcpp::Named("Vlambda",Vlambda),
+                            Rcpp::Named("elbo",elbo),
+                            Rcpp::Named("step",step)
   );
   
 }
@@ -631,7 +634,7 @@ Rcpp::List VBEMM_DINO(arma::mat data,int K,arma::mat Q,double EMlambda0=2,double
   xi=ke_1dim(h,lambda,Vlambda);
   double PHt,df,e;
   arma::vec phi1;arma::vec phi2;double phi2_uni;
-  arma::vec elbo(T);elbo(0)=0;
+  arma::vec elbo(T);elbo(0)=0;int step;
   for(int t=1;t<T;t++){
     //1,update rho(pars for z_i)
     phi1 = digamma_vec(delta);
@@ -654,7 +657,7 @@ Rcpp::List VBEMM_DINO(arma::mat data,int K,arma::mat Q,double EMlambda0=2,double
     Elambda0t(0)=EMeta0;Elambda0t(1)=EMlambda0;
     Vlambda0t(0)=VMeta0;Vlambda0t(1)=VMlambda0;
     elbo(t)=ELBO_1dim(ystar,Vlambda,xi,rho,Vlambda0,delta,delta0,lambda00,Vlambda00,lambda0t,Vlambda0t,PH0,PHt,df);
-    e=abs(elbo(t)-elbo(t-1));
+    e=abs(elbo(t)-elbo(t-1));step=t;
     Rcout << "Iteration = "<< t ;
     Rcout <<";ELBO change = "<< e<<'\r';
     if(e<e0){
@@ -669,7 +672,9 @@ Rcpp::List VBEMM_DINO(arma::mat data,int K,arma::mat Q,double EMlambda0=2,double
                             Rcpp::Named("Est_pi",pi),
                             Rcpp::Named("delta",delta),
                             Rcpp::Named("rho",rho),
-                            Rcpp::Named("Vlambda",Vlambda)
+                            Rcpp::Named("Vlambda",Vlambda),
+                            Rcpp::Named("elbo",elbo),
+                            Rcpp::Named("step",step)
   );
   
 }
@@ -756,7 +761,7 @@ Rcpp::List VBEMM_LCDM(arma::mat data,int K,arma::mat Q,arma::umat lambdaindex,ar
   arma::vec elbo(T);elbo(0)=0;
   double e=1.0;  
   arma::vec PHt(2),df(2);
-  arma::vec phi1;arma::vec phi2;double phi2_uni;
+  arma::vec phi1;arma::vec phi2;double phi2_uni;int step;
   for(int t=1;t<T;t++){
     //1,update rho(pars for z_i)
     phi1 = digamma_vec(delta);
@@ -799,7 +804,7 @@ Rcpp::List VBEMM_LCDM(arma::mat data,int K,arma::mat Q,arma::umat lambdaindex,ar
     
     elbo(t)=ELBO_lcdm_main_inter(ystar,Vlambda,xi,rho,Vlambda0,delta,delta0,lamind_all,lambdalen_c,lambda00,
          Vlambda00,lambda0t,Vlambda0t,PH0_vec,PHt,df);
-    e=abs(elbo(t)-elbo(t-1));
+    e=abs(elbo(t)-elbo(t-1));step=t;
     Rcout << "Iteration = "<< t ;
     Rcout <<";ELBO change = "<< e<<'\r';
     if(e<e0){
@@ -815,7 +820,9 @@ Rcpp::List VBEMM_LCDM(arma::mat data,int K,arma::mat Q,arma::umat lambdaindex,ar
                             Rcpp::Named("Est_pi",pi),
                             Rcpp::Named("delta",delta),
                             Rcpp::Named("rho",rho),
-                            Rcpp::Named("Vlambda",Vlambda)
+                            Rcpp::Named("Vlambda",Vlambda),
+                            Rcpp::Named("elbo",elbo),
+                            Rcpp::Named("step",step)
   );
   
 }
@@ -945,5 +952,6 @@ Rcpp::List VBEMM_LCDM_by_dim(arma::mat data,int K,arma::mat Q,arma::umat lambdai
   );
   
 }
+
 
 
