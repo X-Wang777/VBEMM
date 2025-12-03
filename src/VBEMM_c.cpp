@@ -398,35 +398,7 @@ double ELBO_1dim(arma::mat y,arma::cube Vlambda,arma::mat xi,arma::mat rho,arma:
   return re;
 }
 
-// [[Rcpp::export]]
-double ELBO_lcdm(arma::mat y,arma::cube Vlambda,arma::mat xi,arma::mat rho,arma::mat Vlambda0,arma::vec delta,arma::vec delta0,arma::umat lambdaindd,arma::ivec lambdalen,arma::vec Mlambda0,arma::vec VMlambda0,arma::vec Mlambda0t,arma::vec VMlambda0t,arma::vec ph0,arma::vec pht,arma::vec df){
-  int N=y.n_rows;
-  int J=y.n_cols;
-  arma::mat ke;
-  int L=Vlambda0.n_cols;
-  double re;
-  
-  arma::vec Vj(J);
-  for(int j=0;j<J;j++){
-    arma::mat Vlambdanewj=Vlambda.row(j);
-    arma::uvec index=lambdaindd.row(j).t();
-    index=index.head(lambdalen(j));
-    Vj(j)=log(det(Vlambdanewj(index,index)))-log(det(Vlambda0(index,index)));
-  }
-  
-  ke=log(Sigmod(xi))+LAmatrix(xi)%pow(xi,2)-0.5*xi;
-  ke=cumsum(ke,1);
-  ke=ones(N*1)*ke.col(J-1).t();
-  re=sum(sum(rho%(ke-log(rho))))+0.5*sum(Vj)+sum(lgamma(delta)-lgamma(delta0))+lgamma(sum(delta0))-lgamma(sum(delta));
-  re=re+0.5*sum(log(VMlambda0t)-log(VMlambda0))+sum(log(pht)-log(ph0))+
-    0.5*(VMlambda0t(0)*(1/VMlambda0t(0)-1/VMlambda0(0))-pow(Mlambda0t(0)-Mlambda0(0),2)/VMlambda0(0));
-  arma::vec re1(L-1);
-  for(int d=1;d<(L);d++){
-    re1(d-1)=0.5*((VMlambda0t(d)-Mlambda0t(d)*VMlambda0t(d)*df(d-1)/pht(d-1))*(1/VMlambda0t(d)-1/VMlambda0(d))-pow(Mlambda0t(d)-Mlambda0(d),2)/VMlambda0(d));
-  }
-  re=re+sum(re1);
-  return re;
-}
+
 // [[Rcpp::export]]
 double ELBO_lcdm_main_inter(arma::mat y,arma::cube Vlambda,arma::mat xi,arma::mat rho,arma::mat Vlambda0,arma::vec delta,arma::vec delta0,
                             arma::umat lambdaindd,arma::ivec lambdalen,arma::vec Mlambda0,arma::vec VMlambda0,arma::vec Mlambda0t,
@@ -576,7 +548,6 @@ Rcpp::List VBEMM_DINA(arma::mat data,int K,arma::mat Q,double EMlambda0=2,double
                             Rcpp::Named("delta",delta),
                             Rcpp::Named("rho",rho),
                             Rcpp::Named("Vlambda",Vlambda),
-                            Rcpp::Named("elbo",elbo),
                             Rcpp::Named("step",step)
   );
   
@@ -826,132 +797,5 @@ Rcpp::List VBEMM_LCDM(arma::mat data,int K,arma::mat Q,arma::umat lambdaindex,ar
   );
   
 }
-
-
-// [[Rcpp::export]]
-Rcpp::List VBEMM_LCDM_by_dim(arma::mat data,int K,arma::mat Q,arma::umat lambdaindex,arma::umat comb,arma::ivec comlen,double EMlambda0_value=2,double Vlambda0_value=1,
-                       double EMeta0=-1,double delta0_value=1,double ueta0=-2,double ulambda0=0,double veta0=10,double vlambda0=10, double Mlambdainitial=2,
-                       double Vlambdainitial_value=1,double Metainitial=-1,double deltainitial=1,double trunc_num=0,int T=5000,double e0=0.0001) 
-{
-  int N = data.n_rows;int J = data.n_cols;int L = pow(2,K);int D=L-1;
-  arma::mat ystar = 2*data-1;//0,1 response data y transform to 1,-1 ystar
-  arma::mat IL;IL.eye(L,L);
-  arma::mat Vlambda0 = IL*Vlambda0_value;
-  arma::vec delta0 = rep(delta0_value,L);
-  arma::ivec CL=seq(0,L-1);
-  arma::mat alpha_all = Trans_10to2_mat(K, CL);//all attribute profile
-  arma::vec EMlambda0 = rep(EMlambda0_value,D);
-  //arma::vec Mlambdainitial=rep(Mlambdainitial_value,D);
-  arma::mat Vlambdainitial=IL*Vlambdainitial_value;
-  //some definations
-  arma::cube h(J,L,L);
-  arma::mat alpha(N,K);
-  arma::umat lambdaindd=arma::zeros<arma::umat>(J,D);
-  arma::ivec lambdalen(J); //= (sum(lambdaindex,0)).t();
-  arma::uvec lambdaindd_j;arma::uvec  kk;
-  for(int j=0;j<J;j++){
-    kk=arma::find(lambdaindex.row(j)>0);
-    lambdalen(j)=kk.n_elem;
-    lambdaindd_j=(lambdaindd.row(j)).t();
-    lambdaindd_j.head(lambdalen(j)) = arma::find(lambdaindex.row(j)==1)+1;
-    lambdaindd.row(j)=lambdaindd_j.t();
-  }
-  arma::umat lamind_all=arma::zeros<arma::umat>(J,L);
-  lamind_all.cols(1,L-1)=lambdaindd;
-  arma::ivec lambdalen_c=lambdalen+1;
-  //initial value
-  double Meta0,VMeta0;
-  arma::vec Mlambda0(D),VMlambda0(D);
-  arma::vec lambda00=rep(ulambda0,L);lambda00(0)=ueta0;//lambda00.tail(D)=rep(ulambda0,D);
-  arma::vec Vlambda00=rep(vlambda0,L);Vlambda00(0)=veta0;//Vlambda00.tail(D)=rep(vlambda0,D);
-  arma::vec lambda0t(L);
-  arma::vec Elambda0t(L);Elambda0t(0)=EMeta0;Elambda0t.tail(D)=EMlambda0;
-  arma::vec Vlambda0t(L);
-  arma::cube Vlambda(J,L,L);
-  for(int j=0;j<J;j++ ){
-    Vlambda.row(j) = Vlambdainitial;
-  }
-  arma::mat Mlambda = arma::ones(J,D)*Mlambdainitial;
-  arma::vec Meta = arma::ones<arma::vec>(J)*Metainitial;
-  arma::mat lambda(J,L);
-  lambda.col(0) = Meta;lambda.cols(1,L-1)=Mlambda;
-  arma::vec rhoinitial = arma::randu<arma::vec>(L);
-  rhoinitial = rhoinitial/sum(rhoinitial);
-  //rhoinitial=arma::ones<arma::vec>(L)/32;
-  arma::mat rho = arma::ones(N,1)*rhoinitial.t();
-  arma::vec delta = arma::ones<arma::vec>(L)*deltainitial;
-  arma::vec pi = arma::randu<arma::vec>(L);
-  pi = pi/sum(pi);//pi=arma::ones<arma::vec>(L)/32;
-  arma::cube H = H_allprofile_lcdm(alpha_all,Q,comb,comlen);
-  arma::mat hj(L,L);arma::mat H_j(L,D);
-  hj.col(0)=arma::ones<arma::vec>(L);
-  for(int j=0;j<J;j++ ){
-    H_j=H.row(j);
-    hj.cols(1,L-1)=H_j;
-    h.row(j) = hj; 
-  }
-  arma::mat xi=ke_1dim(h,lambda,Vlambda);
-  arma::ivec lengthd(D);
-  for(int d=0;d<D;d++){
-    kk=arma::find(lambdaindex.col(d)>0);
-    lengthd(d)=(kk).n_elem;
-    VMlambda0(d)= 1/(lengthd(d)+1/(vlambda0));
-  }
-  VMeta0 = 1/(J+1/(veta0));
-  double PH0 = R::pnorm(trunc_num,  ulambda0, sqrt(vlambda0),1,0);//lower = true, log = false
-  PH0 = 1-PH0;
-  arma::vec PH0_vec=rep(PH0,D);
-  arma::vec elbo(T);elbo(0)=0;
-  double e=1.0;  
-  arma::vec PHt(D),df(D);
-  arma::vec phi1;arma::vec phi2;double phi2_uni;
-  for(int t=1;t<T;t++){
-    //1,update rho(pars for z_i)
-    phi1 = digamma_vec(delta);
-    phi2_uni = R::digamma(sum(delta));
-    phi2 = arma::ones<arma::vec>(L)*phi2_uni;
-    
-    update_lcdm(ystar,h,lambda,Vlambda,xi,phi1,phi2,delta0,delta,rho,Elambda0t,Vlambda0,lamind_all,lambdalen_c);
-    Meta =lambda.col(0);
-    Mlambda = lambda.cols(1,L-1);
-    //update prior
-    Meta0= VMeta0*(ueta0/veta0+sum(Meta));
-    EMeta0 = Meta0;
-    arma::uvec inl;arma::vec Mlambda_d;
-    for(int d=0;d<D;d++){
-      inl = arma::find(Mlambda.col(d)!=0);
-      Mlambda_d=Mlambda.col(d);
-      Mlambda0(d) = VMlambda0(d)*(ulambda0/(vlambda0)+sum(Mlambda_d.elem(inl)));
-      PHt(d) =1- R::pnorm(trunc_num, Mlambda0(d),sqrt(VMlambda0(d)),  1,  0 );
-      df(d) = R::dnorm(trunc_num,Mlambda0(d),sqrt(VMlambda0(d)),0);
-      EMlambda0(d) = Mlambda0(d)+VMlambda0(d)*df(d)/PHt(d);
-    }
-    lambda0t(0)=Meta0;lambda0t.tail(D)=Mlambda0;
-    Elambda0t(0)=EMeta0;Elambda0t.tail(D)=EMlambda0;
-    Vlambda0t(0)=VMeta0;Vlambda0t.tail(D)=VMlambda0;
-    
-    elbo(t)=ELBO_lcdm(ystar,Vlambda,xi,rho,Vlambda0,delta,delta0,lamind_all,lambdalen_c,lambda00,
-         Vlambda00,lambda0t,Vlambda0t,PH0_vec,PHt,df);
-    e=abs(elbo(t)-elbo(t-1));
-    Rcout << "Iteration = "<< t ;
-    Rcout <<";ELBO change = "<< e<<'\r';
-    if(e<e0){
-      break;
-    }                  
-  }
-  
-  pi=delta/sum(delta);
-  alpha=Estimate_alpha(rho,alpha_all, N, K);
-  return Rcpp::List::create(Rcpp::Named("Est_alpha",alpha),
-                            Rcpp::Named("Est_eta",Meta),
-                            Rcpp::Named("Est_lambda",Mlambda),
-                            Rcpp::Named("Est_pi",pi),
-                            Rcpp::Named("delta",delta),
-                            Rcpp::Named("rho",rho),
-                            Rcpp::Named("Vlambda",Vlambda)
-  );
-  
-}
-
 
 
